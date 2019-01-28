@@ -1,0 +1,5 @@
+MockAddr: 0.0.0.0
+MockPort: 8888
+DashboardAddr: 127.0.0.1
+DashboardPort: 9999
+DBPath: ./sqlite.db
