@@ -5,10 +5,11 @@ import (
 	"Mock-API-Data/constant"
 	"Mock-API-Data/model"
 	"Mock-API-Data/proxy"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/url"
 	"sync"
+
+	"github.com/gin-gonic/gin"
 )
 
 var (

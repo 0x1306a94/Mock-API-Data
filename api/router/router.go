@@ -49,6 +49,16 @@ func InitDashboardRouter(storage *storage.Storage) *gin.Engine {
 			ruleRouter.POST("/delete", ruleController.Delete)
 			ruleRouter.GET("/list", ruleController.List)
 		}
+
+		{
+			dataController := &controller.Data{}
+			dataRouter := authorizedRouter.Group("/data")
+			dataRouter.POST("/create", dataController.Create)
+			// dataRouter.GET("/info", dataController.Info)
+			// dataRouter.POST("/update", dataController.Update)
+			// dataRouter.POST("/delete", dataController.Delete)
+			// dataRouter.GET("/list", dataController.List)
+		}
 	}
 
 	return rootRouter
@@ -67,7 +77,13 @@ func InitMockRouter(storage *storage.Storage) *gin.Engine {
 	{
 		mockController := &controller.Mock{}
 		mockRouter := rootRouter.Group("/mock")
-		mockRouter.Any("/:projectId/:ruleId", mockController.Handler)
+		mockRouter.GET("/:projectId/:ruleId", mockController.Handler)
+		mockRouter.POST("/:projectId/:ruleId", mockController.Handler)
+		mockRouter.PUT("/:projectId/:ruleId", mockController.Handler)
+		mockRouter.DELETE("/:projectId/:ruleId", mockController.Handler)
+		mockRouter.HEAD("/:projectId/:ruleId", mockController.Handler)
+		mockRouter.OPTIONS("/:projectId/:ruleId", mockController.Handler)
+		mockRouter.PATCH("/:projectId/:ruleId", mockController.Handler)
 	}
 
 	return rootRouter

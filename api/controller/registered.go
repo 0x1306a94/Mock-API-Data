@@ -25,17 +25,17 @@ func Registered(c *gin.Context) {
 
 	var reg regParam
 	if err := c.ShouldBind(&reg); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
 	if !util.CheckEmail(reg.Email) {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "邮箱格式错误"))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "邮箱格式错误"))
 		return
 	}
 
 	if reg.ConfirmPassword != reg.Password {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "密码与确认密码不符"))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "密码与确认密码不符"))
 		return
 	}
 
@@ -52,7 +52,7 @@ func Registered(c *gin.Context) {
 	err := storageHelper.DB().
 		Create(user).Error
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 

@@ -28,13 +28,17 @@ type ruleUpdateParam struct {
 }
 
 type ruleInfoParam struct {
-	ProjectId int64 `uri:"projectId" form:"projectId" json:"projectId" binding:"required"`
+	RuleId int64 `uri:"ruleId" form:"ruleId" json:"ruleId" binding:"required"`
 }
 
 type rulePageParam struct {
 	ProjectId int64 `uri:"projectId" form:"projectId" json:"projectId" binding:"required"`
 	PageNo    int64 `uri:"pageNo" form:"pageNo" json:"pageNo"`
 	PageSize  int64 `uri:"pageNo" form:"pageSize" json:"pageSize"`
+}
+
+type ruleDeleteParam struct {
+	RuleId int64 `form:"ruleId" json:"ruleId" binding:"required"`
 }
 
 // 创建规则 POST
@@ -47,17 +51,14 @@ func (r *Rule) Create(c *gin.Context) {
 
 	var param ruleCreateParam
 	if err := c.ShouldBind(&param); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
-	tmp := model.Rule{
-		ProjectId: param.ProjectId,
-		UserId:    loginUser.Id,
-		Path:      param.Path,
-		Method:    param.Method,
-	}
+	var tmp model.Rule
 	err := storageHelper.DB().
+		Where("project_id = ? and user_id = ? and path = ? and method = ?",
+			param.ProjectId, loginUser.Id, param.Path, param.Method).
 		Find(&tmp).Error
 
 	if err != nil && !gorm.IsRecordNotFoundError(err) {
@@ -65,7 +66,7 @@ func (r *Rule) Create(c *gin.Context) {
 		return
 	}
 	if tmp.Id > 0 {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "已经存在,请勿重复提交"))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "已经存在,请勿重复提交"))
 		return
 	}
 
@@ -75,6 +76,7 @@ func (r *Rule) Create(c *gin.Context) {
 		UserId:    loginUser.Id,
 		Path:      param.Path,
 		Method:    param.Method,
+		Enable:    param.Enable,
 		CreatedAt: tt,
 		UpdateAt:  tt,
 	}
@@ -82,7 +84,7 @@ func (r *Rule) Create(c *gin.Context) {
 		Create(rule).Error
 
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, util.GenerateSuccessResponse(rule))
@@ -98,16 +100,16 @@ func (r *Rule) Info(c *gin.Context) {
 
 	var param ruleInfoParam
 	if err := c.ShouldBind(&param); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	var rule model.Rule
 	err := storageHelper.DB().
-		Where("project_id = ? and user_id = ?", param.ProjectId, loginUser.Id).
+		Where("rule_id = ? and user_id = ?", param.RuleId, loginUser.Id).
 		Find(&rule).Error
 
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, util.GenerateSuccessResponse(rule))
@@ -123,7 +125,7 @@ func (r *Rule) Update(c *gin.Context) {
 
 	var param ruleUpdateParam
 	if err := c.ShouldBind(&param); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
@@ -141,7 +143,7 @@ func (r *Rule) Update(c *gin.Context) {
 			UpdateAt: tt}).Error
 
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, util.GenerateSuccessResponse(true))
@@ -155,25 +157,21 @@ func (r *Rule) Delete(c *gin.Context) {
 		return
 	}
 
-	var param ruleCreateParam
+	var param ruleDeleteParam
 	if err := c.ShouldBind(&param); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
-	tt := time.Now()
 	rule := &model.Rule{
-		ProjectId: param.ProjectId,
-		UserId:    loginUser.Id,
-		Path:      param.Path,
-		Method:    param.Method,
-		CreatedAt: tt,
-		UpdateAt:  tt,
+		Id:     param.RuleId,
+		UserId: loginUser.Id,
 	}
 	err := storageHelper.DB().
-		Create(rule).Error
+		Delete(rule).Error
+
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
@@ -191,7 +189,7 @@ func (r *Rule) List(c *gin.Context) {
 
 	var param rulePageParam
 	if err := c.ShouldBind(&param); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
@@ -206,12 +204,13 @@ func (r *Rule) List(c *gin.Context) {
 	var rules []*model.Rule
 	err := storageHelper.DB().
 		Where("user_id = ? and project_id = ?", loginUser.Id, param.ProjectId).
+		Order("created_at desc").
 		Offset(((param.PageNo - 1) * param.PageSize)).
 		Limit(param.PageSize).
 		Find(&rules).Error
 
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, util.GenerateSuccessResponse(rules))

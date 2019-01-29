@@ -14,7 +14,7 @@ type User struct {
 }
 
 func (u *User) Info(c *gin.Context) {
-	userId := c.Param("id")
+	userId := c.Param("userId")
 	if userId == "" {
 		loginUser, ok := ExtractLoginUser(c)
 		if !ok {
@@ -31,18 +31,19 @@ func (u *User) Info(c *gin.Context) {
 	}
 	id, err := strconv.ParseInt(userId, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "参数不合法"))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "参数不合法"))
 		return
 	}
-	user := model.User{
-		Id: id,
-	}
-	err = storageHelper.DB().First(&user).Error
+	var user model.User
+	err = storageHelper.DB().
+		Where("id = ?", id).
+		Find(&user).Error
+
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "没有该用户"))
 		} else {
-			c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		}
 		return
 	}

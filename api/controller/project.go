@@ -35,7 +35,7 @@ func (p *Project) Create(c *gin.Context) {
 
 	var param projectParam
 	if err := c.ShouldBind(&param); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
@@ -48,9 +48,11 @@ func (p *Project) Create(c *gin.Context) {
 		CreatedAt: tt,
 		UpdateAt:  tt,
 	}
-	err := storageHelper.DB().Create(project).Error
+	err := storageHelper.DB().
+		Create(project).Error
+
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
@@ -68,7 +70,7 @@ func (p *Project) Update(c *gin.Context) {
 
 	var param projectUpdateParam
 	if err := c.ShouldBind(&param); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
@@ -86,7 +88,7 @@ func (p *Project) Update(c *gin.Context) {
 			UpdateAt: tt}).Error
 
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, util.GenerateSuccessResponse(true))
@@ -101,12 +103,12 @@ func (p *Project) Delete(c *gin.Context) {
 	}
 	projectId := c.PostForm("projectId")
 	if projectId == "" {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "参数为空"))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "参数为空"))
 		return
 	}
 	id, err := strconv.ParseInt(projectId, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "参数不合法"))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "参数不合法"))
 		return
 	}
 
@@ -117,7 +119,7 @@ func (p *Project) Delete(c *gin.Context) {
 	err = storageHelper.DB().
 		Delete(project).Error
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, util.GenerateSuccessResponse(true))
@@ -132,12 +134,12 @@ func (p *Project) Info(c *gin.Context) {
 	}
 	projectId := c.Query("projectId")
 	if projectId == "" {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "参数为空"))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "参数为空"))
 		return
 	}
 	id, err := strconv.ParseInt(projectId, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "参数不合法"))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "参数不合法"))
 		return
 	}
 	project := &model.Project{
@@ -147,7 +149,7 @@ func (p *Project) Info(c *gin.Context) {
 	err = storageHelper.DB().
 		Find(project).Error
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, util.GenerateSuccessResponse(project))
@@ -162,7 +164,7 @@ func (p *Project) List(c *gin.Context) {
 
 	var param pageParams
 	if err := c.ShouldBind(&param); err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
@@ -183,7 +185,7 @@ func (p *Project) List(c *gin.Context) {
 		Find(&projects).Error
 
 	if err != nil {
-		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, util.GenerateSuccessResponse(projects))
