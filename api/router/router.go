@@ -8,11 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitRouter(storage *storage.Storage) *gin.Engine {
+// 创建dashboard 路由
+func InitDashboardRouter(storage *storage.Storage) *gin.Engine {
 	rootRouter := gin.Default()
 	rootRouter.HandleMethodNotAllowed = true
 	rootRouter.Use(middleware.StorageMiddleware(storage))
-	rootRouter.Use(middleware.ReverseProxyMiddleware())
+	//rootRouter.Use(middleware.ReverseProxyMiddleware())
 
 	{
 		rootRouter.POST("/login", controller.Login)
@@ -40,11 +41,22 @@ func InitRouter(storage *storage.Storage) *gin.Engine {
 		}
 	}
 
+	return rootRouter
+}
+
+// 创建mock 路由
+func InitMockRouter(storage *storage.Storage) *gin.Engine {
+
+	rootRouter := gin.Default()
+	rootRouter.HandleMethodNotAllowed = true
+	rootRouter.Use(middleware.StorageMiddleware(storage))
+	rootRouter.Use(middleware.AuthorizedMiddleware())
+	rootRouter.Use(middleware.ReverseProxyMiddleware())
+
 	// mock
 	{
 		mockController := &controller.Mock{}
 		mockRouter := rootRouter.Group("/mock")
-		mockRouter.Use(middleware.AuthorizedMiddleware())
 		mockRouter.Any("/:projectId/:ruleId", mockController.Handler)
 	}
 

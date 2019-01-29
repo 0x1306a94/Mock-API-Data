@@ -31,7 +31,7 @@ func TestNewStorage(t *testing.T) {
 	project := model.Project{
 		Name:               "测试",
 		UserId:             user.Id,
-		Key:             util.NewProjectKey(user.Id),
+		Key:                util.NewProjectKey(user.Id),
 		Host:               "http://www.baidu.com",
 		InsecureSkipVerify: true,
 	}

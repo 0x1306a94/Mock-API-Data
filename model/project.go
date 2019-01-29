@@ -9,6 +9,7 @@ type Project struct {
 	UserId             int64     `gorm:"not null" json:"userId"`
 	Host               string    `gorm:"type:varchar(255);not null" json:"host"`
 	InsecureSkipVerify bool      `gorm:"default:false" json:"insecureSkipVerify"`
+	Enable             bool      `gorm:"default:false" json:"enable"`
 	CreatedAt          time.Time `gorm:"not null" json:"createdAt"`
 	UpdateAt           time.Time `json:"updateAt"`
 }
