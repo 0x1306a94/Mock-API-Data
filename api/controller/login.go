@@ -22,7 +22,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	var login loginParam
-	if err := c.Bind(&login); err != nil {
+	if err := c.ShouldBind(&login); err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}

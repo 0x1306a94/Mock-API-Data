@@ -39,6 +39,16 @@ func InitDashboardRouter(storage *storage.Storage) *gin.Engine {
 			projectRouter.POST("/delete", projectController.Delete)
 			projectRouter.GET("/list", projectController.List)
 		}
+
+		{
+			ruleController := &controller.Rule{}
+			ruleRouter := authorizedRouter.Group("/rule")
+			ruleRouter.POST("/create", ruleController.Create)
+			ruleRouter.GET("/info", ruleController.Info)
+			ruleRouter.POST("/update", ruleController.Update)
+			ruleRouter.POST("/delete", ruleController.Delete)
+			ruleRouter.GET("/list", ruleController.List)
+		}
 	}
 
 	return rootRouter

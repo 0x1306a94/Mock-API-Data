@@ -14,9 +14,15 @@ type Project struct {
 }
 
 type projectParam struct {
-	ProjectId int64  `form:"projectId" json:"projectId"`
 	Name      string `form:"name" json:"name" binding:"required"`
 	Host      string `form:"host" json:"host" binding:"required"`
+}
+
+type projectUpdateParam struct {
+	ProjectId int64  `form:"projectId" json:"projectId" binding:"required"`
+	Name      string `form:"name" json:"name" binding:"required"`
+	Host      string `form:"host" json:"host" binding:"required"`
+	Enable    bool   `form:"enable" json:"enable" binding:"required"`
 }
 
 // 创建项目 POST
@@ -28,7 +34,7 @@ func (p *Project) Create(c *gin.Context) {
 	}
 
 	var param projectParam
-	if err := c.Bind(&param); err != nil {
+	if err := c.ShouldBind(&param); err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
@@ -54,27 +60,24 @@ func (p *Project) Create(c *gin.Context) {
 // 更新项目 POST
 func (p *Project) Update(c *gin.Context) {
 
-	storageHelper, ok := ExtractStorageHelper(c)
+	loginUser, storageHelper, ok := ExtractLoginUserAndStorageHelper(c)
 	if !ok {
 		c.Writer.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
 
-	var param projectParam
-	if err := c.Bind(&param); err != nil {
+	var param projectUpdateParam
+	if err := c.ShouldBind(&param); err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
-		return
-	}
-	if param.ProjectId == 0 {
-		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "projectId 参数为空"))
 		return
 	}
 
 	tt := time.Now()
 	project := &model.Project{
 		Id: param.ProjectId,
+		UserId: loginUser.Id,
 	}
-	err := storageHelper.DB().Model(project).Updates(&model.Project{Name: param.Name, Host: param.Host, UpdateAt: tt}).Error
+	err := storageHelper.DB().Model(project).Updates(&model.Project{Name: param.Name, Host: param.Host, Enable: param.Enable, UpdateAt: tt}).Error
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -149,7 +152,7 @@ func (p *Project) List(c *gin.Context) {
 	}
 
 	var param pageParams
-	if err := c.Bind(&param); err != nil {
+	if err := c.ShouldBind(&param); err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}

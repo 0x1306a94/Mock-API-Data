@@ -5,6 +5,7 @@ import "time"
 type Rule struct {
 	Id        int64     `gorm:"primary_key;auto_increment" json:"id"`
 	ProjectId int64     `gorm:"not null" json:"projectId"`
+	UserId    int64     `gorm:"not null" json:"userId"`
 	Path      string    `gorm:"not null" json:"path"`
 	Method    string    `gorm:"not null" json:"method"`
 	Enable    bool      `gorm:"default:false" json:"enable"`

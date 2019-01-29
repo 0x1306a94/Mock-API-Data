@@ -24,7 +24,7 @@ func Registered(c *gin.Context) {
 	}
 
 	var reg regParam
-	if err := c.Bind(&reg); err != nil {
+	if err := c.ShouldBind(&reg); err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
