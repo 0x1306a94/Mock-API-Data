@@ -49,7 +49,8 @@ func Registered(c *gin.Context) {
 		UpdateAt: t,
 	}
 
-	err := storageHelper.DB().Create(user).Error
+	err := storageHelper.DB().
+		Create(user).Error
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return

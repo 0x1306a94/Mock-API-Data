@@ -14,8 +14,8 @@ type Project struct {
 }
 
 type projectParam struct {
-	Name      string `form:"name" json:"name" binding:"required"`
-	Host      string `form:"host" json:"host" binding:"required"`
+	Name string `form:"name" json:"name" binding:"required"`
+	Host string `form:"host" json:"host" binding:"required"`
 }
 
 type projectUpdateParam struct {
@@ -74,10 +74,17 @@ func (p *Project) Update(c *gin.Context) {
 
 	tt := time.Now()
 	project := &model.Project{
-		Id: param.ProjectId,
+		Id:     param.ProjectId,
 		UserId: loginUser.Id,
 	}
-	err := storageHelper.DB().Model(project).Updates(&model.Project{Name: param.Name, Host: param.Host, Enable: param.Enable, UpdateAt: tt}).Error
+	err := storageHelper.DB().
+		Model(project).
+		Updates(&model.Project{
+			Name:     param.Name,
+			Host:     param.Host,
+			Enable:   param.Enable,
+			UpdateAt: tt}).Error
+
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -107,7 +114,8 @@ func (p *Project) Delete(c *gin.Context) {
 		Id: id,
 	}
 
-	err = storageHelper.DB().Delete(project).Error
+	err = storageHelper.DB().
+		Delete(project).Error
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -136,7 +144,8 @@ func (p *Project) Info(c *gin.Context) {
 		Id: id,
 	}
 
-	err = storageHelper.DB().Find(project).Error
+	err = storageHelper.DB().
+		Find(project).Error
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -166,7 +175,13 @@ func (p *Project) List(c *gin.Context) {
 	}
 
 	var projects []*model.Project
-	err := storageHelper.DB().Where("user_id = ?", loginUser.Id).Order("created_at desc").Offset(((param.PageNo - 1) * param.PageSize)).Limit(param.PageSize).Find(&projects).Error
+	err := storageHelper.DB().
+		Where("user_id = ?", loginUser.Id).
+		Order("created_at desc").
+		Offset(((param.PageNo - 1) * param.PageSize)).
+		Limit(param.PageSize).
+		Find(&projects).Error
+
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return

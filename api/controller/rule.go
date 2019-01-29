@@ -3,9 +3,11 @@ package controller
 import (
 	"Mock-API-Data/model"
 	"Mock-API-Data/util"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 )
 
 type Rule struct {
@@ -20,21 +22,20 @@ type ruleCreateParam struct {
 
 type ruleUpdateParam struct {
 	RuleId int64  `form:"ruleId" json:"ruleId" binding:"required"`
-	Path      string `form:"path" json:"path" binding:"required"`
-	Method    string `form:"method" json:"method" binding:"required"`
-	Enable    bool   `form:"enable" json:"enable" binding:"required"`
+	Path   string `form:"path" json:"path" binding:"required"`
+	Method string `form:"method" json:"method" binding:"required"`
+	Enable bool   `form:"enable" json:"enable" binding:"required"`
 }
 
 type ruleInfoParam struct {
-	ProjectId int64  `uri:"projectId" form:"projectId" json:"projectId" binding:"required"`
+	ProjectId int64 `uri:"projectId" form:"projectId" json:"projectId" binding:"required"`
 }
 
 type rulePageParam struct {
-	ProjectId int64  `uri:"projectId" form:"projectId" json:"projectId" binding:"required"`
-	PageNo   int64 `uri:"pageNo" form:"pageNo" json:"pageNo"`
-	PageSize int64 `uri:"pageNo" form:"pageSize" json:"pageSize"`
+	ProjectId int64 `uri:"projectId" form:"projectId" json:"projectId" binding:"required"`
+	PageNo    int64 `uri:"pageNo" form:"pageNo" json:"pageNo"`
+	PageSize  int64 `uri:"pageNo" form:"pageSize" json:"pageSize"`
 }
-
 
 // 创建规则 POST
 func (r *Rule) Create(c *gin.Context) {
@@ -45,19 +46,21 @@ func (r *Rule) Create(c *gin.Context) {
 	}
 
 	var param ruleCreateParam
-	if err := c.Bind(&param); err != nil {
+	if err := c.ShouldBind(&param); err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
 	tmp := model.Rule{
 		ProjectId: param.ProjectId,
-		UserId: loginUser.Id,
-		Path: param.Path,
-		Method: param.Method,
+		UserId:    loginUser.Id,
+		Path:      param.Path,
+		Method:    param.Method,
 	}
-	err := storageHelper.DB().Find(&tmp).Error
-	if err != nil {
+	err := storageHelper.DB().
+		Find(&tmp).Error
+
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
@@ -75,7 +78,9 @@ func (r *Rule) Create(c *gin.Context) {
 		CreatedAt: tt,
 		UpdateAt:  tt,
 	}
-	err = storageHelper.DB().Create(rule).Error
+	err = storageHelper.DB().
+		Create(rule).Error
+
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -97,7 +102,10 @@ func (r *Rule) Info(c *gin.Context) {
 		return
 	}
 	var rule model.Rule
-	err := storageHelper.DB().Where("project_id = ?", param.ProjectId).Where("user_id = ?", loginUser.Id).Find(&rule).Error
+	err := storageHelper.DB().
+		Where("project_id = ? and user_id = ?", param.ProjectId, loginUser.Id).
+		Find(&rule).Error
+
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -121,10 +129,17 @@ func (r *Rule) Update(c *gin.Context) {
 
 	tt := time.Now()
 	rule := &model.Rule{
-		Id: param.RuleId,
+		Id:     param.RuleId,
 		UserId: loginUser.Id,
 	}
-	err := storageHelper.DB().Model(&rule).Updates(&model.Rule{Path: param.Path, Method: param.Method, Enable: param.Enable, UpdateAt: tt}).Error
+	err := storageHelper.DB().
+		Model(rule).
+		Updates(&model.Rule{
+			Path:     param.Path,
+			Method:   param.Method,
+			Enable:   param.Enable,
+			UpdateAt: tt}).Error
+
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -155,7 +170,8 @@ func (r *Rule) Delete(c *gin.Context) {
 		CreatedAt: tt,
 		UpdateAt:  tt,
 	}
-	err := storageHelper.DB().Create(rule).Error
+	err := storageHelper.DB().
+		Create(rule).Error
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -188,7 +204,12 @@ func (r *Rule) List(c *gin.Context) {
 	}
 
 	var rules []*model.Rule
-	err := storageHelper.DB().Where("user_id = ?", loginUser.Id).Where("project_id = ?", param.ProjectId).Order("created_at desc").Offset(((param.PageNo - 1) * param.PageSize)).Limit(param.PageSize).Find(&rules).Error
+	err := storageHelper.DB().
+		Where("user_id = ? and project_id = ?", loginUser.Id, param.ProjectId).
+		Offset(((param.PageNo - 1) * param.PageSize)).
+		Limit(param.PageSize).
+		Find(&rules).Error
+
 	if err != nil {
 		c.JSON(http.StatusOK, util.GenerateErrorResponse(400, err.Error()))
 		return

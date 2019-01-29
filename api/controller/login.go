@@ -27,7 +27,9 @@ func Login(c *gin.Context) {
 		return
 	}
 	var user model.User
-	err := storageHelper.DB().Where("name = ? OR email = ?", login.UserName, login.UserName).First(&user).Error
+	err := storageHelper.DB().
+		Where("name = ? OR email = ?", login.UserName, login.UserName).
+		First(&user).Error
 	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			c.JSON(http.StatusOK, util.GenerateErrorResponse(400, "没有该用户"))
