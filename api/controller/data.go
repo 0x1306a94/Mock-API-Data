@@ -3,12 +3,21 @@ package controller
 import (
 	"Mock-API-Data/model"
 	"Mock-API-Data/util"
+	"encoding/json"
+	"encoding/xml"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
+
+var supportContentType map[string]int = map[string]int{
+	"json": 1,
+	"xml":  1,
+	"html": 1,
+	"text": 1,
+}
 
 type Data struct {
 }
@@ -45,6 +54,30 @@ func (d *Data) Create(c *gin.Context) {
 	if tmp.Id > 0 {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "已经存在,请勿重复提交"))
 		return
+	}
+
+	if _, exsit := supportContentType[param.ContentType]; !exsit {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "contentType 参数不合法"))
+		return
+	}
+
+	switch param.ContentType {
+	case "json":
+		var jsonObj map[string]interface{}
+		err := json.Unmarshal([]byte(param.Content), &jsonObj)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "对应规则数据不是合法的JSON格式数据"))
+			return
+		}
+	case "xml":
+		var xmlObj map[string]interface{}
+		err := xml.Unmarshal([]byte(param.Content), &xmlObj)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "对应规则数据不是合法的XML格式数据"))
+			return
+		}
+	default:
+		// no thing
 	}
 
 	tt := time.Now()

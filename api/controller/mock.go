@@ -3,7 +3,6 @@ package controller
 import (
 	"Mock-API-Data/model"
 	"Mock-API-Data/util"
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -65,13 +64,12 @@ func (m *Mock) Handler(c *gin.Context) {
 	}
 	switch data.ContentType {
 	case "json":
-		var jsonObj map[string]interface{}
-		err := json.Unmarshal([]byte(data.Content), &jsonObj)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "对应规则数据不是合法的json数据"))
-			return
-		}
-		c.JSON(data.ResponseCode, jsonObj)
+		c.Data(http.StatusOK, "application/json", []byte(data.Content))
 	case "xml":
+		c.Data(http.StatusOK, "application/xml", []byte(data.Content))
+	case "html":
+		c.Data(data.ResponseCode, "text/html", []byte(data.Content))
+	default:
+		c.Data(data.ResponseCode, "text/plain", []byte(data.Content))
 	}
 }
