@@ -13,7 +13,6 @@ func InitDashboardRouter(storage *storage.Storage) *gin.Engine {
 	rootRouter := gin.Default()
 	rootRouter.HandleMethodNotAllowed = true
 	rootRouter.Use(middleware.StorageMiddleware(storage))
-	//rootRouter.Use(middleware.ReverseProxyMiddleware())
 
 	{
 		rootRouter.POST("/login", controller.Login)
@@ -54,10 +53,9 @@ func InitDashboardRouter(storage *storage.Storage) *gin.Engine {
 			dataController := &controller.Data{}
 			dataRouter := authorizedRouter.Group("/data")
 			dataRouter.POST("/create", dataController.Create)
-			// dataRouter.GET("/info", dataController.Info)
-			// dataRouter.POST("/update", dataController.Update)
-			// dataRouter.POST("/delete", dataController.Delete)
-			// dataRouter.GET("/list", dataController.List)
+			dataRouter.GET("/info", dataController.Info)
+			dataRouter.POST("/update", dataController.Update)
+			dataRouter.POST("/delete", dataController.Delete)
 		}
 	}
 
@@ -69,8 +67,11 @@ func InitMockRouter(storage *storage.Storage) *gin.Engine {
 
 	rootRouter := gin.Default()
 	rootRouter.HandleMethodNotAllowed = true
+	// 注入数据库实例
 	rootRouter.Use(middleware.StorageMiddleware(storage))
+	// token 授权检查
 	rootRouter.Use(middleware.AuthorizedMiddleware())
+	// 代理请求
 	rootRouter.Use(middleware.ReverseProxyMiddleware())
 
 	// mock

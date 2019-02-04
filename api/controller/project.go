@@ -25,6 +25,10 @@ type projectUpdateParam struct {
 	Enable    bool   `form:"enable" json:"enable" binding:"required"`
 }
 
+type projectDeleteParam struct {
+	ProjectId int64 `form:"projectId" json:"projectId" binding:"required"`
+}
+
 // 创建项目 POST
 func (p *Project) Create(c *gin.Context) {
 	loginUser, storageHelper, ok := ExtractLoginUserAndStorageHelper(c)
@@ -101,22 +105,18 @@ func (p *Project) Delete(c *gin.Context) {
 		c.Writer.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
-	projectId := c.PostForm("projectId")
-	if projectId == "" {
-		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "参数为空"))
-		return
-	}
-	id, err := strconv.ParseInt(projectId, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "参数不合法"))
+
+	var param projectDeleteParam
+	if err := c.ShouldBind(&param); err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
 
 	project := &model.Project{
-		Id: id,
+		Id: param.ProjectId,
 	}
 
-	err = storageHelper.DB().
+	err := storageHelper.DB().
 		Delete(project).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))

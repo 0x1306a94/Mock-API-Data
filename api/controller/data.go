@@ -29,6 +29,22 @@ type dataCreateParam struct {
 	Content      string `form:"content" json:"content" binding:"required"`
 }
 
+type dataUpdateParam struct {
+	DataId       int64  `form:"dataId" json:"dataId" binding:"required"`
+	ResponseCode int    `form:"responseCode" json:"responseCode" binding:"required"`
+	ContentType  string `form:"contentType" json:"contentType" binding:"required"` // text html json xml
+	Content      string `form:"content" json:"content" binding:"required"`
+}
+
+type dataDeleteParam struct {
+	DataId int64 `form:"dataId" json:"dataId" binding:"required"`
+}
+
+type dataInfoParam struct {
+	DataId int64 `uri:"dataId" form:"dataId" json:"dataId" binding:"required"`
+}
+
+// 创建数据
 func (d *Data) Create(c *gin.Context) {
 	loginUser, storageHelper, ok := ExtractLoginUserAndStorageHelper(c)
 	if !ok {
@@ -58,6 +74,11 @@ func (d *Data) Create(c *gin.Context) {
 
 	if _, exsit := supportContentType[param.ContentType]; !exsit {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "contentType 参数不合法"))
+		return
+	}
+
+	if len(param.Content) == 0 {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "content 参数内容为空"))
 		return
 	}
 
@@ -93,6 +114,107 @@ func (d *Data) Create(c *gin.Context) {
 	err = storageHelper.DB().
 		Create(data).Error
 
+	if err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, util.GenerateSuccessResponse(data))
+}
+
+// 更新数据
+func (d *Data) Update(c *gin.Context) {
+	loginUser, storageHelper, ok := ExtractLoginUserAndStorageHelper(c)
+	if !ok {
+		c.Writer.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+
+	var param dataUpdateParam
+	if err := c.ShouldBind(&param); err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		return
+	}
+
+	var tmp model.Data
+	err := storageHelper.DB().
+		Where("id = ? and user_id = ?",
+			param.DataId,
+			loginUser.Id).
+		Find(&tmp).Error
+
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, "没有对应的模拟数据"))
+		} else {
+			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		}
+		return
+	}
+
+	tt := time.Now()
+	tmp.ResponseCode = param.ResponseCode
+	tmp.ContentType = param.ContentType
+	tmp.Content = param.Content
+	tmp.UpdateAt = tt
+	err = storageHelper.DB().
+		Save(&tmp).Error
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, util.GenerateSuccessResponse(true))
+}
+
+// 删除数据
+func (d *Data) Delete(c *gin.Context) {
+	loginUser, storageHelper, ok := ExtractLoginUserAndStorageHelper(c)
+	if !ok {
+		c.Writer.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+
+	var param dataDeleteParam
+	if err := c.ShouldBind(&param); err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		return
+	}
+
+	data := &model.Data{
+		Id:     param.DataId,
+		UserId: loginUser.Id,
+	}
+
+	err := storageHelper.DB().
+		Delete(data).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, util.GenerateSuccessResponse(true))
+}
+
+// 数据信息 GET
+func (d *Data) Info(c *gin.Context) {
+	loginUser, storageHelper, ok := ExtractLoginUserAndStorageHelper(c)
+	if !ok {
+		c.Writer.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+	var param dataInfoParam
+	if err := c.ShouldBind(&param); err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		return
+	}
+
+	data := &model.Data{
+		Id:     param.DataId,
+		UserId: loginUser.Id,
+	}
+
+	err := storageHelper.DB().
+		Find(data).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return

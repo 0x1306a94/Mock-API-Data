@@ -105,7 +105,7 @@ func (r *Rule) Info(c *gin.Context) {
 	}
 	var rule model.Rule
 	err := storageHelper.DB().
-		Where("rule_id = ? and user_id = ?", param.RuleId, loginUser.Id).
+		Where("id = ? and user_id = ?", param.RuleId, loginUser.Id).
 		Find(&rule).Error
 
 	if err != nil {
@@ -163,19 +163,22 @@ func (r *Rule) Delete(c *gin.Context) {
 		return
 	}
 
-	rule := &model.Rule{
-		Id:     param.RuleId,
-		UserId: loginUser.Id,
-	}
+	var rule model.Rule
 	err := storageHelper.DB().
-		Delete(rule).Error
+		Where("id = ? and user_id = ?", param.RuleId, loginUser.Id).
+		Find(&rule).Error
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
-
-	c.JSON(http.StatusOK, util.GenerateSuccessResponse(rule))
+	err = storageHelper.DB().
+		Delete(&rule).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, util.GenerateSuccessResponse(true))
 }
 
 // 创建规则 GET
