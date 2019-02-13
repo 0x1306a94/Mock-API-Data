@@ -176,8 +176,16 @@ func (p *Project) List(c *gin.Context) {
 		param.PageSize = 10
 	}
 
+	var totalCount int64
+
+	err := storageHelper.DB().Model(&model.Project{}).Count(&totalCount).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+		return
+	}
+
 	var projects []*model.Project
-	err := storageHelper.DB().
+	err = storageHelper.DB().
 		Where("user_id = ?", loginUser.Id).
 		Order("created_at desc").
 		Offset(((param.PageNo - 1) * param.PageSize)).
@@ -188,6 +196,13 @@ func (p *Project) List(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, util.GenerateSuccessResponse(projects))
+	hasMore := param.PageNo*param.PageSize < totalCount
+	c.JSON(http.StatusOK, util.GenerateSuccessResponse(model.PageResponse{
+		PageNo:   param.PageNo,
+		PageSize: param.PageSize,
+		Total:    totalCount,
+		HasMore:  hasMore,
+		List:     projects,
+	}))
 
 }
