@@ -14,8 +14,9 @@ type Project struct {
 }
 
 type projectParam struct {
-	Name string `form:"name" json:"name" binding:"required"`
-	Host string `form:"host" json:"host" binding:"required"`
+	Name   string `form:"name" json:"name" binding:"required"`
+	Host   string `form:"host" json:"host" binding:"required"`
+	Enable bool   `form:"enable" json:"enable"`
 }
 
 type projectUpdateParam struct {
@@ -49,6 +50,7 @@ func (p *Project) Create(c *gin.Context) {
 		Name:      param.Name,
 		Host:      param.Host,
 		UserId:    loginUser.Id,
+		Enable:    param.Enable,
 		CreatedAt: tt,
 		UpdateAt:  tt,
 	}
@@ -184,10 +186,15 @@ func (p *Project) List(c *gin.Context) {
 		return
 	}
 
+	order := "created_at asc"
+	if param.Reverse {
+		order = "created_at desc"
+	}
+
 	var projects []*model.Project
 	err = storageHelper.DB().
 		Where("user_id = ?", loginUser.Id).
-		Order("created_at desc").
+		Order(order).
 		Offset(((param.PageNo - 1) * param.PageSize)).
 		Limit(param.PageSize).
 		Find(&projects).Error

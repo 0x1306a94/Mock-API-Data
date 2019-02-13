@@ -11,6 +11,7 @@ import (
 type pageParams struct {
 	PageNo   int64 `uri:"pageNo" form:"pageNo" json:"pageNo" binding:"required"`
 	PageSize int64 `uri:"pageSize" form:"pageSize" json:"pageSize" binding:"required"`
+	Reverse  bool  `uri:"reverse" form:"reverse" json:"reverse"`
 }
 
 // 从上下文中 读取当前登录用户和存储实例
