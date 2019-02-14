@@ -30,6 +30,13 @@ type projectDeleteParam struct {
 	ProjectId int64 `form:"projectId" json:"projectId" binding:"required"`
 }
 
+type projectListParam struct {
+	PageNo   int64 `uri:"pageNo" form:"pageNo" json:"pageNo" binding:"required"`
+	PageSize int64 `uri:"pageSize" form:"pageSize" json:"pageSize" binding:"required"`
+	Reverse  bool  `uri:"reverse" form:"reverse" json:"reverse"`
+	Type     int   `uri:"type" form:"type" json:"type"` // 0 获取所有 1 获取已启用 2 获取已禁用
+}
+
 // 创建项目 POST
 func (p *Project) Create(c *gin.Context) {
 	loginUser, storageHelper, ok := ExtractLoginUserAndStorageHelper(c)
@@ -164,7 +171,7 @@ func (p *Project) List(c *gin.Context) {
 		return
 	}
 
-	var param pageParams
+	var param projectListParam
 	if err := c.ShouldBind(&param); err != nil {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
@@ -178,22 +185,43 @@ func (p *Project) List(c *gin.Context) {
 		param.PageSize = 10
 	}
 
+	// 总数
 	var totalCount int64
 
-	err := storageHelper.DB().Model(&model.Project{}).Count(&totalCount).Error
-	if err != nil {
-		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
-		return
-	}
-
+	// 设置排序 查询条件
 	order := "created_at asc"
 	if param.Reverse {
 		order = "created_at desc"
 	}
 
+	// 设置查询条件
+	where := "user_id = ?"
+	switch param.Type {
+	case 1:
+		where = "user_id = ? and enable = 1"
+		err := storageHelper.DB().Where("enable = 1").Model(&model.Project{}).Count(&totalCount).Error
+		if err != nil {
+			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+			return
+		}
+	case 2:
+		where = "user_id = ? and enable = 0"
+		err := storageHelper.DB().Where("enable = 0").Model(&model.Project{}).Count(&totalCount).Error
+		if err != nil {
+			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+			return
+		}
+	default:
+		err := storageHelper.DB().Model(&model.Project{}).Count(&totalCount).Error
+		if err != nil {
+			c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
+			return
+		}
+	}
+
 	var projects []*model.Project
-	err = storageHelper.DB().
-		Where("user_id = ?", loginUser.Id).
+	err := storageHelper.DB().
+		Where(where, loginUser.Id).
 		Order(order).
 		Offset(((param.PageNo - 1) * param.PageSize)).
 		Limit(param.PageSize).
