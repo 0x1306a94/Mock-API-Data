@@ -89,17 +89,15 @@ func (p *Project) Update(c *gin.Context) {
 	}
 	fmt.Println(param)
 	tt := time.Now()
-	project := &model.Project{
-		Id:     param.ProjectId,
-		UserId: loginUser.Id,
-	}
 	err := storageHelper.DB().
-		Model(project).
-		Updates(&model.Project{
-			Name:     param.Name,
-			Host:     param.Host,
-			Enable:   param.Enable,
-			UpdateAt: tt}).Error
+		Model(&model.Project{}).
+		Where("id = ? and user_id = ?", param.ProjectId, loginUser.Id).
+		Updates(map[string]interface{}{
+			"name":      param.Name,
+			"host":      param.Host,
+			"enable":    param.Enable,
+			"update_at": tt,
+		}).Error
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
