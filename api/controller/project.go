@@ -3,6 +3,7 @@ package controller
 import (
 	"Mock-API-Data/model"
 	"Mock-API-Data/util"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -23,7 +24,7 @@ type projectUpdateParam struct {
 	ProjectId int64  `form:"projectId" json:"projectId" binding:"required"`
 	Name      string `form:"name" json:"name" binding:"required"`
 	Host      string `form:"host" json:"host" binding:"required"`
-	Enable    bool   `form:"enable" json:"enable" binding:"required"`
+	Enable    bool   `form:"enable" json:"enable" binding:"exists"`
 }
 
 type projectDeleteParam struct {
@@ -86,7 +87,7 @@ func (p *Project) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, util.GenerateErrorResponse(400, err.Error()))
 		return
 	}
-
+	fmt.Println(param)
 	tt := time.Now()
 	project := &model.Project{
 		Id:     param.ProjectId,
